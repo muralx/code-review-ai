@@ -139,7 +139,10 @@ On a PR opened by the bot's own account, GitHub refuses both approve and request
 - **Containment.** An egress allowlist (Anthropic, GitHub, package registries, the host's
   hub port, the deployment's MCP servers, plus `firewall-allow.txt`), read-only mounts for local roots, a fine-grained bot
   token that can only read code and review PRs, and a deny list in `.claude/settings.json`
-  for git pushes and `gh` writes. Reviewed content is treated as untrusted data.
+  for `gh` writes (PR, issue and repository subcommands, and `gh api` with a method, field or
+  input flag). Reads stay allowed. Pushes are left to the token, which has no write access to
+  contents, so a specialist can still push between fixture repositories in its working
+  directory. Reviewed content is treated as untrusted data.
 
 `docs/deployment.md` covers setting a deployment up and operating it.
 

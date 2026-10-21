@@ -12,7 +12,8 @@ framework repository is never run directly; `cra init` renders a deployment dire
   start from. The framework ships a starter under `templates/company/`.
 - A dedicated GitHub bot account with a fine-grained personal access token scoped to the repos
   to review: `contents: read`, `pull-requests: write`, `metadata: read`. People request review
-  from the bot; reviews post as the bot.
+  from the bot; reviews post as the bot. Keep `contents` read-only: the token is what stops a
+  push to GitHub, since the deny list allows `git push` for fixture repositories.
 - The agent-link hub running on the host and reachable from the Docker bridge. The hub binds to
   loopback by default; start it with `AGENT_LINK_HOST=0.0.0.0` (or the bridge address, usually
   `172.17.0.1`). Do the same for any MCP server on the host the deployment lists (below).

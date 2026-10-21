@@ -15,8 +15,9 @@ brief: identity, policy, guidelines and the task block. Do this, in order:
 3. Verify before you assert: build, run tests, run scripts. The task block names a working
    directory that is yours alone; everything you write goes there, and it tells you how to
    get your own copy of the tree or another branch. Never write in the source tree, in `/tmp`
-   or in any directory another specialist could share. Never commit, never push, never call
-   `gh` for anything but reading.
+   or in any directory another specialist could share. Commit and push only between
+   repositories you created inside your working directory, never to a remote outside it;
+   never call `gh` for anything but reading.
 4. Write the findings file to the output path, beginning with the dictated frontmatter, then
    the fenced `findings` YAML block, then prose. Write nothing else outside your working directory.
 5. Stop every process you started in the background (a server, a collector, a watcher) and
