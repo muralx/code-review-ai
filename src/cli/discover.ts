@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { machineSettings } from '../lib/machine.ts';
 import { parseArgs } from 'node:util';
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -22,7 +23,7 @@ async function main(): Promise<void> {
   const cfg = (parse(await readFile(values.config, 'utf8')) ?? {}) as { github?: { repos?: unknown } };
   const repos = cfg.github?.repos;
   if (!Array.isArray(repos) || !repos.every((r) => typeof r === 'string' && r.includes('/'))) usage('config.yaml: github.repos must be a list of owner/name');
-  const result = await discover({ repos: repos as string[], runsDir: resolve(values.runs) });
+  const result = await discover({ repos: repos as string[], runsDir: resolve(values.runs), polling: machineSettings().polling });
   const text = JSON.stringify(result, null, 2) + '\n';
   if (values.out) await writeFile(resolve(values.out), text, 'utf8'); else process.stdout.write(text);
 }

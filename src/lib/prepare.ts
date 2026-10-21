@@ -1,3 +1,4 @@
+import { machineSettings } from './machine.ts';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -166,6 +167,7 @@ export async function prepareRun(input: PrepareInput): Promise<PrepareResult> {
   const files = JSON.parse(await readFile(filesPath, 'utf8')) as string[];
   const targetGuidelines = join(runDir, 'meta', 'target-guidelines');
   const plan = await resolveRun({
+    postingMode: machineSettings().posting,
     request, config: input.config, frameworkDir: input.frameworkDir, companyDir: input.companyDir,
     targetGuidelinesDir: (await exists(targetGuidelines)) ? targetGuidelines : null, files,
   });

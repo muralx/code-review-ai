@@ -14,6 +14,8 @@ export interface DiscoverInput {
   settleMs?: number;
   /** The current time, for tests. */
   now?: Date;
+  /** False when this machine has polling off (CRA_POLL=off): nothing is discovered. */
+  polling?: boolean;
 }
 
 /** A head younger than this is still being pushed to: wait for the next poll. */
@@ -132,6 +134,10 @@ async function recordRetired(runsDir: string, run: RunRecord, state: string): Pr
  */
 export async function discover(input: DiscoverInput): Promise<DiscoverResult> {
   const result: DiscoverResult = { candidates: [], retired: [], skipped: [] };
+  if (input.polling === false) {
+    result.skipped.push({ repo: '*', number: 0, reason: 'polling off (CRA_POLL=off)' });
+    return result;
+  }
   const latest = await latestRunsByPr(input.runsDir);
   const handled = new Set<string>();
   const requestedKeys = new Set<string>();

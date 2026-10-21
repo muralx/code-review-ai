@@ -82,6 +82,32 @@ test('mcp_servers in config.yaml render .mcp.json, settings, specialist tools an
   await removeTree(tmp);
 });
 
+test('a local root naming an environment variable is kept for compose to fill in from .env', async () => {
+  const tmp = await makeTree({});
+  const dir = join(tmp, 'acme');
+  await initDeployment({ dir, frameworkDir: ROOT, company: COMPANY, link: true, workspace: 'acme-dev', companyName: 'acme' });
+  const cfgPath = join(dir, 'config.yaml');
+  await writeFile(cfgPath, (await readFile(cfgPath, 'utf8')).replace(/local_roots:[^\n]*\n(\s+-[^\n]*\n|\s+\[\]\n)?/, 'local_roots:\n  - ${REPOS_ROOT}\n'), 'utf8');
+  await updateDeployment(dir, ROOT);
+  const compose = parse(await readFile(join(dir, 'compose.yaml'), 'utf8')) as { services: { reviewer: { container_name: string; volumes: string[] } } };
+  assert.ok(compose.services.reviewer.volumes.includes('${REPOS_ROOT}:${REPOS_ROOT}:ro'));
+  assert.equal(compose.services.reviewer.container_name, 'cra-acme');
+  await removeTree(tmp);
+});
+
+test('agent_link values may name variables from .env; an unset one is an error', async () => {
+  const tmp = await makeTree({});
+  const dir = join(tmp, 'acme');
+  await initDeployment({ dir, frameworkDir: ROOT, company: COMPANY, link: true, workspace: 'acme-dev' });
+  const cfgPath = join(dir, 'config.yaml');
+  await writeFile(cfgPath, (await readFile(cfgPath, 'utf8')).replace(/notify: .*/, 'notify: ${CRA_NOTIFY}'), 'utf8');
+  await assert.rejects(updateDeployment(dir, ROOT), /names \$\{CRA_NOTIFY\}/);
+  await writeFile(join(dir, '.env'), 'GH_TOKEN=x\nCRA_NOTIFY="pat"\n', 'utf8');
+  const g = await updateDeployment(dir, ROOT);
+  assert.equal(g.vars['NOTIFY_PEER'], 'pat');
+  await removeTree(tmp);
+});
+
 test('parseClaudeUpdate recognises the three outcomes', () => {
   assert.deepEqual(parseClaudeUpdate('Checking…\nSuccessfully updated from 2.1.296 to version 2.1.300.'), { updated: true, from: '2.1.296', to: '2.1.300' });
   assert.deepEqual(parseClaudeUpdate('Claude Code is already up to date (2.1.296)'), { updated: false });

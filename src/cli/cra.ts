@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { machineSettings } from '../lib/machine.ts';
 import { parseArgs } from 'node:util';
 import { mkdir, readFile } from 'node:fs/promises';
 import { openSync } from 'node:fs';
@@ -32,7 +33,7 @@ usage: cra [--deployment DIR] <command>
   status
   discover
   retire-clean
-  init --dir DIR --company <url|path> --workspace NAME [--link] [--name N] [--notify PEER] [--identity BOT]
+  init --dir DIR --company <url|path> --workspace NAME [--link] [--company-name C] [--name N] [--notify PEER] [--identity BOT]
        [--poll MIN] [--max-concurrent N] [--local-root DIR]... [--agent-link PATH] [--image IMG]
        [--hub-port P]
   update [--dir DIR]
@@ -91,7 +92,7 @@ async function main(): Promise<void> {
       type: { type: 'string' }, input: { type: 'string' }, output: { type: 'string' },
       outcome: { type: 'string' }, failure: { type: 'string' },
       dir: { type: 'string' }, company: { type: 'string' }, workspace: { type: 'string' }, link: { type: 'boolean', default: false },
-      name: { type: 'string' }, notify: { type: 'string' }, identity: { type: 'string' }, poll: { type: 'string' },
+      'company-name': { type: 'string' }, name: { type: 'string' }, notify: { type: 'string' }, identity: { type: 'string' }, poll: { type: 'string' },
       'max-concurrent': { type: 'string' }, 'local-root': { type: 'string', multiple: true }, 'agent-link': { type: 'string' },
       image: { type: 'string' }, 'hub-port': { type: 'string' },
     },
@@ -106,7 +107,7 @@ async function main(): Promise<void> {
     if (!values.workspace) usage('--workspace is required');
     const g = await initDeployment({
       dir: values.dir, frameworkDir: FRAMEWORK, company: values.company, link: values.link, workspace: values.workspace,
-      ...(values.name ? { name: values.name } : {}), ...(values.notify ? { notify: values.notify } : {}), ...(values.identity ? { identity: values.identity } : {}),
+      ...(values['company-name'] ? { companyName: values['company-name'] } : {}), ...(values.name ? { name: values.name } : {}), ...(values.notify ? { notify: values.notify } : {}), ...(values.identity ? { identity: values.identity } : {}),
       ...(values.poll ? { pollMinutes: Number(values.poll) } : {}), ...(values['max-concurrent'] ? { maxConcurrent: Number(values['max-concurrent']) } : {}),
       ...(values['local-root'] ? { localRoots: values['local-root'] } : {}), ...(values['agent-link'] ? { agentLinkPath: values['agent-link'] } : {}),
       ...(values.image ? { image: values.image } : {}), ...(values['hub-port'] ? { hubPort: Number(values['hub-port']) } : {}),
@@ -225,7 +226,7 @@ async function main(): Promise<void> {
     }
     case 'discover': {
       const repos = dep.config.github?.repos ?? [];
-      const result = await discover({ repos, runsDir: dep.runsDir });
+      const result = await discover({ repos, runsDir: dep.runsDir, polling: machineSettings().polling });
       process.stdout.write(JSON.stringify(result, null, 2) + '\n');
       return;
     }

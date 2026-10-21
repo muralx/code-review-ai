@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { machineSettings } from '../lib/machine.ts';
 import { parseArgs } from 'node:util';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
@@ -51,6 +52,7 @@ async function main(): Promise<void> {
   if (!Array.isArray(files) || !files.every((f) => typeof f === 'string')) usage('files.json must be a JSON array of paths');
 
   const plan = await resolveRun({
+    postingMode: machineSettings().posting,
     request, config,
     frameworkDir: resolve(values.framework!),
     companyDir: values.company ? resolve(values.company) : null,

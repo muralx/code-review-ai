@@ -56,6 +56,25 @@ targets need no path translation. The command writes:
 
 Then edit `config.yaml` (`github.repos`) and `.env` (`GH_TOKEN`).
 
+## Machine settings
+
+Several people can run the same deployment repository, each on their own machine with their own
+`.env`. Discovery only picks pull requests that request a review from the account `GH_TOKEN`
+belongs to, so each machine reviews the pull requests assigned to its own account. Settings
+that differ per machine are environment variables in `.env`, which is never committed:
+
+| Variable | Values | Effect |
+|---|---|---|
+| `CRA_POLL` | `on` (default), `off` | `off`: discovery starts nothing; the agent reviews only what it is asked for over agent-link |
+| `CRA_POSTING` | `auto` (default), `comment` | `comment`: a review of a project whose policy is `auto` is posted as a comment, never as an approval or a request for changes |
+
+The `agent_link` values in `config.yaml` may also name a variable, such as
+`notify: ${CRA_NOTIFY}` for the human relay each person runs; `cra update` fills them in from
+`.env`. A `local_roots` entry may name an environment variable instead of a path, such as
+`${REPOS_ROOT}`; compose fills it in from `.env`, so `config.yaml` holds no machine path. Put
+anything else that only one machine needs (extra mounts, networks) in `compose.override.yaml`,
+which compose merges and `cra update` never touches.
+
 ## MCP servers
 
 A deployment has no MCP servers by default. List the ones it needs under `mcp_servers` in

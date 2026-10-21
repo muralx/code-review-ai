@@ -112,3 +112,13 @@ test('a manifest-level prompt applies to every type that does not set its own', 
   const q = await resolveRun(input({ request: { id: 'r', action: 'review', target: { kind: 'pr', repo: 'acme/private-tools', number: 2 } } }));
   assert.deepEqual(q.types.map((t) => [t.name, t.prompt]), [['security', '${company}/prompts/strict.md'], ['testing', '${company}/prompts/strict.md']]);
 });
+
+test('a machine posting comments (CRA_POSTING=comment) turns an auto policy into a comment', async () => {
+  const req = { id: 'r', action: 'review' as const, target: { kind: 'pr' as const, repo: 'acme/elsewhere', number: 1 } };
+  const auto = await resolveRun(input({ request: req }));
+  assert.equal(auto.posting.policy, 'auto');
+  assert.equal(auto.posting.form, 'verdict');
+  const comment = await resolveRun(input({ request: req, postingMode: 'comment' }));
+  assert.deepEqual([comment.posting.form, comment.posting.post], ['comment', true]);
+  assert.match(comment.posting.reason, /CRA_POSTING=comment/);
+});

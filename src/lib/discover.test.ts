@@ -141,3 +141,12 @@ test('a repository the token cannot read is reported, not treated as having no r
   assert.match(result.skipped[0]?.reason ?? '', /^unreadable: .*Not Found/);
   await removeTree(runsDir);
 });
+
+test('polling off: nothing is listed or started', async () => {
+  const runsDir = await makeTree({});
+  const stub = await installGhStub([]);
+  const result = await withEnv(stub.env, () => discover({ repos: [REPO], runsDir, polling: false }));
+  assert.deepEqual(result, { candidates: [], retired: [], skipped: [{ repo: '*', number: 0, reason: 'polling off (CRA_POLL=off)' }] });
+  assert.deepEqual(await stub.calls(), []);
+  await removeTree(runsDir);
+});

@@ -101,13 +101,21 @@ async function frameworkCommit(frameworkDir: string): Promise<string | null> {
 }
 
 /**
+ * A local root as written into compose.yaml: a path is made absolute; an entry that references an
+ * environment variable (`${REPOS_ROOT}`) is kept, and compose fills it in from `.env`.
+ */
+function rootPath(r: string): string {
+  return r.includes('${') ? r : resolve(r);
+}
+
+/**
  * Template values for a new deployment, with defaults for every option left
  * unset. `companyRepo` is the clone URL or the linked absolute path; an
  * absolute path is also mounted into the container.
  */
 function composeVars(o: Required<Pick<InitOptions, 'workspace'>> & InitOptions, companyRepo: string): Vars {
   const companyName = o.companyName ?? basename(o.company.replace(/\.git$/, '')).replace(/[^A-Za-z0-9_-]+/g, '-').toLowerCase();
-  const roots = (o.localRoots ?? []).map((r) => resolve(r));
+  const roots = (o.localRoots ?? []).map(rootPath);
   return {
     WORKSPACE: o.workspace,
     AGENT_NAME: o.name ?? 'code-reviewer',
@@ -244,6 +252,27 @@ export async function initDeployment(o: InitOptions): Promise<Generated> {
   return generated;
 }
 
+/** KEY=VALUE lines of the deployment's `.env`; quotes around a value are dropped. */
+async function readEnvFile(dir: string): Promise<Record<string, string>> {
+  let text = '';
+  try { text = await readFile(join(dir, '.env'), 'utf8'); } catch { return {}; }
+  const out: Record<string, string> = {};
+  for (const line of text.split('\n')) {
+    const m = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line);
+    if (m) out[m[1]!] = m[2]!.replace(/^(['"])(.*)\1$/, '$2');
+  }
+  return out;
+}
+
+/** Replaces `${NAME}` with its value from `.env`, else from the environment; throws when neither has it. */
+function expandVars(value: string, env: Record<string, string>): string {
+  return value.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (_, k: string) => {
+    const v = env[k] ?? process.env[k];
+    if (v === undefined || v === '') throw new Error(`config.yaml names \${${k}}, which neither .env nor the environment sets`);
+    return v;
+  });
+}
+
 /** Re-render the generated files from the current framework; operator files are never touched. */
 export async function updateDeployment(dir: string, frameworkDir: string): Promise<Generated> {
   dir = resolve(dir);
@@ -251,13 +280,15 @@ export async function updateDeployment(dir: string, frameworkDir: string): Promi
   // Values the operator may have changed since init live in config.yaml and .agent-link.json.
   const cfg = (parse(await readFile(join(dir, 'config.yaml'), 'utf8')) ?? {}) as Config & { agent_link?: { workspace?: string; name?: string; notify?: string }; local_roots?: string[]; mcp_servers?: Record<string, McpServer> };
   const vars: Vars = { ...prev.vars };
-  if (cfg.agent_link?.name) vars['AGENT_NAME'] = cfg.agent_link.name;
-  if (cfg.agent_link?.notify) vars['NOTIFY_PEER'] = cfg.agent_link.notify;
-  if (cfg.agent_link?.workspace) vars['WORKSPACE'] = cfg.agent_link.workspace;
+  // agent_link values may name variables from .env (notify: ${CRA_NOTIFY}), so one shared config serves every machine.
+  const env = await readEnvFile(dir);
+  if (cfg.agent_link?.name) vars['AGENT_NAME'] = expandVars(cfg.agent_link.name, env);
+  if (cfg.agent_link?.notify) vars['NOTIFY_PEER'] = expandVars(cfg.agent_link.notify, env);
+  if (cfg.agent_link?.workspace) vars['WORKSPACE'] = expandVars(cfg.agent_link.workspace, env);
   if (cfg.github?.poll_interval_minutes) vars['POLL_MINUTES'] = cfg.github.poll_interval_minutes;
   if (cfg.limits?.max_concurrent_runs) vars['MAX_CONCURRENT'] = cfg.limits.max_concurrent_runs;
   if (Array.isArray(cfg.local_roots)) {
-    const roots = cfg.local_roots.map((r) => resolve(r));
+    const roots = cfg.local_roots.map(rootPath);
     vars['LOCAL_ROOTS_YAML'] = roots.length ? roots.map((r) => `  - ${r}`).join('\n') : '  []';
     vars['LOCAL_ROOT_VOLUMES'] = roots.map((r) => `      - ${r}:${r}:ro\n`).join('');
   }

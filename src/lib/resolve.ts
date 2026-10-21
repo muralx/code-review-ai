@@ -13,6 +13,8 @@ export interface ResolveInput {
   request: Request;
   /** Deployment config; supplies the specialist cap and default models. */
   config: Config;
+  /** This machine's posting mode (CRA_POSTING); `comment` turns every posted review into a comment. */
+  postingMode?: 'auto' | 'comment';
   /** Framework checkout; the `${framework}` root of the plan. */
   frameworkDir: string;
   /**
@@ -102,7 +104,7 @@ function selectTypes(manifest: Manifest, request: Request, config: Config): Pick
  * Whether and how to post the review. Only pull requests are posted; a request
  * to post under a `never` policy needs a human.
  */
-function decidePosting(manifest: Manifest, request: Request): Plan['posting'] {
+function decidePosting(manifest: Manifest, request: Request, mode: 'auto' | 'comment' = 'auto'): Plan['posting'] {
   const policy = manifest.posting ?? 'auto';
   if (request.target.kind !== 'pr') return { policy, post: false, form: null, needsHuman: false, reason: 'not a pull request' };
   if (policy === 'never') {
@@ -110,6 +112,7 @@ function decidePosting(manifest: Manifest, request: Request): Plan['posting'] {
     return { policy, post: false, form: null, needsHuman: false, reason: 'project policy never' };
   }
   const post = request.post ?? true;
+  if (mode === 'comment' && policy === 'auto') return { policy, post, form: 'comment', needsHuman: false, reason: 'project policy auto; this machine posts comments (CRA_POSTING=comment)' };
   return { policy, post, form: policy === 'comment-only' ? 'comment' : 'verdict', needsHuman: false, reason: `project policy ${policy}` };
 }
 
@@ -176,7 +179,7 @@ export async function resolveRun(input: ResolveInput): Promise<Plan> {
     languages,
     languagesSource: base.languages?.length ? 'manifest' : 'files',
     types: sel.types,
-    posting: decidePosting(base, request),
+    posting: decidePosting(base, request, input.postingMode),
     siblings: [...(base.siblings ?? [])],
     roots: { framework: input.frameworkDir, company: input.companyDir, project: projectDir, repo: targetLayer },
     droppedTypes: sel.droppedTypes,
