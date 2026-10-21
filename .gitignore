@@ -1,0 +1,8 @@
+node_modules/
+.runs/
+runs/
+*.log
+*.tsbuildinfo
+tests/forbidden-names.local
+CLAUDE.local.md
+.tracker-project.json

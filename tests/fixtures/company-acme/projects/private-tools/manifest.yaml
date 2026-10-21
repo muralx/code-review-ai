@@ -1,0 +1,6 @@
+repo: acme/private-tools
+kind: tool
+posting: never
+prompt: '${company}/prompts/strict.md'
+types:
+  security: { required: true }

@@ -1,0 +1,26 @@
+{
+  "name": "code-review-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Autonomous code review / audit agents: framework prompts, guidelines, resolver and deployment tooling.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "test": "pnpm run test:unit && pnpm run test:bats",
+    "typecheck": "tsc --noEmit",
+    "snapshots:update": "UPDATE_SNAPSHOTS=1 node --test --no-warnings=ExperimentalWarning tests/snapshots.test.ts",
+    "test:unit": "node --test --no-warnings=ExperimentalWarning 'src/**/*.test.ts' 'tests/**/*.test.ts'",
+    "test:bats": "bats tests"
+  },
+  "dependencies": {
+    "yaml": "^2.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "typescript": "~5.9"
+  }
+}

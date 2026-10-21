@@ -1,0 +1,7 @@
+kind: service
+posting: auto
+types:
+  security: { required: true }
+  testing: { required: true }
+  coding-practices: {}
+  documentation: { model: claude-sonnet-5-5, effort: medium }

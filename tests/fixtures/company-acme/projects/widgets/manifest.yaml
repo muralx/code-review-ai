@@ -1,0 +1,9 @@
+repo: acme/widgets
+kind: library
+languages: [go, ts]
+types:
+  security: { required: true, effort: xhigh, prompt: '${company}/prompts/security.md' }
+  testing: { required: true }
+  code-structure: {}
+posting: comment-only
+siblings: [acme/widgets-sdk]

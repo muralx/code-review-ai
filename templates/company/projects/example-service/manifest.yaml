@@ -1,0 +1,22 @@
+# One manifest per reviewed repository. Replace every placeholder before use.
+
+# `repo` is the GitHub owner/name, or a filesystem path prefix for local: targets.
+# `kind` selects guidelines/types/*/kind/<kind>.md: service | library | tool | website.
+# `languages` selects guidelines/types/*/lang/<lang>.md; omit it to infer from the files reviewed.
+repo: your-org/example-service
+kind: service
+languages: [go]
+
+# Which specialists run for this repository. Types marked `required: true` in defaults.yaml
+# are added even if omitted here. Per-type model, effort and prompt override defaults.yaml;
+# `prompt: ${company}/prompts/<name>.md` (or ${project}/<name>.md) picks a template for one type.
+types:
+  security:         { required: true, effort: xhigh }
+  testing:          { required: true }
+  coding-practices: {}
+
+posting: comment-only            # this project wants findings as a comment, never a verdict
+
+# Extra repositories cloned read-only beside the target, for cross-repo checks
+# (callers of a changed symbol, a shared schema, a client the service must stay compatible with).
+siblings: [your-org/example-service-client]

@@ -1,0 +1,32 @@
+# Manifest applied to any repository that has no entry under projects/.
+# Same shape as projects/<name>/manifest.yaml, minus `repo`.
+
+kind: service            # service | library | tool | website | contracts | spec; the most common kind here
+posting: auto            # auto: post reviews on GitHub when the request allows it
+                         # comment-only: post a comment, never an approve/request-changes verdict
+                         # never: write review.md only
+
+# The prompt template, for every type that does not set its own below. Unset, the framework's
+# prompts/specialist.md is used; it includes this repository's files at the same relative paths
+# as the framework's (agents/types/<type>.md, guidelines/common/*.md, guidelines/types/...).
+# To change what is included, edit prompts/specialist.md here and uncomment:
+# prompt: ${company}/prompts/specialist.md
+# The framework also ships ready templates that add opt-in packs, for example:
+# prompt: ${framework}/prompts/hexagonal-service.md   # ports-and-adapters + database rules
+# prompt: ${framework}/prompts/open-source.md         # publishing + tool-enforced quality gates
+
+# Every review type, and how it runs when a project does not say otherwise.
+# `required: true` types run for every project, even if the project's own list omits them.
+# `model`, `effort` and `prompt` set here are inherited by projects that list the type without them;
+# the deployment's config.yaml supplies the model when neither does.
+types:
+  security:         { required: true }
+  testing:          { required: true }
+  coding-practices: {}
+  code-structure:   {}
+  architecture:     {}
+  system-design:    {}
+  documentation:    { model: claude-sonnet-5-5, effort: medium }   # a cheaper model is enough here
+  # Opt-in types; they never run unless listed here or in a project manifest:
+  # spec-compliance:  {}   # did the change build what the ticket, spec or description asked for
+  # performance:      {}   # what the changed paths cost, and what was measured

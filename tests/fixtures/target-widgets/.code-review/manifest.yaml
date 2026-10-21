@@ -1,0 +1,7 @@
+kind: website
+posting: never
+languages: [python]
+prompt: '${company}/prompts/strict.md'
+types:
+  documentation: { prompt: '${company}/prompts/strict.md' }
+  security: { required: false }
